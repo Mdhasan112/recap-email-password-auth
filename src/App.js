@@ -39,7 +39,7 @@ function App() {
       displayName: name
     })
       .then(result => {
-        console.log('updating name')
+        // console.log('updating name')
       })
       .catch(error => {
         console.error(error.message)
