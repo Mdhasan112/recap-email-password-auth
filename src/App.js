@@ -1,6 +1,6 @@
 import './App.css';
 import app from './firebase.init';
-import { createUserWithEmailAndPassword, getAuth, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { createUserWithEmailAndPassword, getAuth, sendEmailVerification, sendPasswordResetEmail, signInWithEmailAndPassword, updateProfile } from "firebase/auth";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
@@ -11,7 +11,8 @@ function App() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('')
+  const [error, setError] = useState('');
+  const [seccess, setSuccess] = useState('')
   const [validated, setValidated] = useState(false);
   const [registered, setRegistered] = useState('')
 
@@ -25,7 +26,7 @@ function App() {
     setPassword(e.target.value)
   };
 
-  const handleRegisteredChange =(e) => {
+  const handleRegisteredChange = (e) => {
     setRegistered(e.target.checked)
   }
   const handleFormSubmit = (e) => {
@@ -38,31 +39,45 @@ function App() {
     setValidated(true);
 
     e.preventDefault();
-    if(registered) {
+    if (registered) {
       signInWithEmailAndPassword(auth, email, password)
-      .then(result => {
-        const user= result.user
-        console.log(user)
-        setError('')
-      })
-      .catch(error => {
-        setError(error.message)
-      })
+        .then(result => {
+          const user = result.user
+          console.log(user)
+          setError('');
+        })
+        .catch(error => {
+          setError(error.message)
+        })
     }
-    else{
+    else {
       createUserWithEmailAndPassword(auth, email, password)
-      .then(result => {
-        const user = result.user;
-        setUserName();
-        console.log(user)
-      })
-      .catch(error => {
-        console.error(error)
-        setError(error.message)
-      });
+        .then(result => {
+          const user = result.user;
+          setUserName();
+          console.log(user)
+          verifyEmail();
+          setSuccess('Account creating successful')
+        })
+        .catch(error => {
+          console.error(error)
+          setError(error.message)
+        });
     }
   };
 
+  const verifyEmail = () => {
+    sendEmailVerification(auth.currentUser)
+      .then(() => {
+        console.log('email sent')
+      })
+  };
+  const handleForgetPassword = () => {
+    sendPasswordResetEmail(auth, email)
+      .then(() => {
+        console.log('sent forget email')
+      })
+  }
   const setUserName = () => {
     updateProfile(auth.currentUser, {
       displayName: name
@@ -78,13 +93,13 @@ function App() {
     <div className='w-50 mx-auto'>
       <h3 className='text-primary'>Please {!registered ? 'Register' : 'Login'}</h3>
       <Form noValidate validated={validated} onSubmit={handleFormSubmit}>
-        <Form.Group className="mb-3" controlId="formBasicName">
+        {!registered && <Form.Group className="mb-3" controlId="formBasicName">
           <Form.Label>Your name</Form.Label>
           <Form.Control onBlur={handleNameBlur} type="text" placeholder="Enter your name" required />
           <Form.Control.Feedback type="invalid">
             Please choose a valid name.
           </Form.Control.Feedback>
-        </Form.Group>
+        </Form.Group>}
 
         <Form.Group className="mb-3" controlId="formBasicEmail">
           <Form.Label>Email address</Form.Label>
@@ -104,10 +119,13 @@ function App() {
             Please provide a valid password.
           </Form.Control.Feedback>
         </Form.Group>
+        <p className='text-success'>{seccess}</p>
         <p className='text-danger'>{error}</p>
         <Form.Group className="mb-3" controlId="formBasicCheckbox">
           <Form.Check onChange={handleRegisteredChange} type="checkbox" label="Already Registered?" />
         </Form.Group>
+        <Button onClick={handleForgetPassword} className='text-danger' variant="link">Forget password</Button>
+        <br />
         <Button variant="primary" type="submit">
           {!registered ? 'Register' : 'Login'}
         </Button>
